@@ -7,7 +7,6 @@ from typing import Dict, List, Literal
 from pydantic import BaseModel, Field
 from openai import OpenAI
 from langchain_openai import ChatOpenAI
-from backend.app.models import PlanResponse
 
 load_dotenv()
 
