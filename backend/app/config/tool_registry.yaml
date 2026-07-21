@@ -1,0 +1,75 @@
+tools:
+  maps_weather:
+    server: amap
+    description: 查询天气预报
+    category: weather
+
+  maps_text_search:
+    server: amap
+    description: POI关键字搜索
+    category: poi
+
+  maps_search_detail:
+    server: amap
+    description: POI详情查询
+    category: poi
+
+  maps_around_search:
+    server: amap
+    description: 周边POI搜索
+    category: poi
+
+  maps_geo:
+    server: amap
+    description: 地址转经纬度
+    category: geo
+
+  maps_regeocode:
+    server: amap
+    description: 经纬度转地址
+    category: geo
+
+  maps_distance:
+    server: amap
+    description: 两点距离计算
+    category: route
+
+  maps_direction_driving:
+    server: amap
+    description: 驾车路线规划
+    category: route
+
+  maps_direction_walking:
+    server: amap
+    description: 步行路线规划
+    category: route
+
+  maps_direction_bicycling:
+    server: amap
+    description: 骑行路线规划
+    category: route
+
+  maps_direction_transit_integrated:
+    server: amap
+    description: 公交路线规划
+    category: route
+
+  maps_ip_location:
+    server: amap
+    description: IP定位
+    category: location
+
+  maps_schema_navi:
+    server: amap
+    description: 打开高德导航
+    category: schema
+
+  maps_schema_take_taxi:
+    server: amap
+    description: 打车页面
+    category: schema
+
+  maps_schema_personal_map:
+    server: amap
+    description: 打开个人地图
+    category: schema

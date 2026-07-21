@@ -1,4 +1,3 @@
-# tools.py
 import os
 import asyncio
 from typing import List
@@ -8,58 +7,56 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 
 load_dotenv()
 
+_amap_tools: List[BaseTool] | None = None
 
-class AmapToolManager:
-    """高德 MCP 工具管理器（单例模式，避免重复连接）"""
-    _instance = None
-    _tools: List[BaseTool] = []
-    _client: MultiServerMCPClient = None
 
-    def __new__(cls, *args, **kwargs):
-        if not cls._instance:
-            cls._instance = super(AmapToolManager, cls).__new__(cls, *args, **kwargs)
-        return cls._instance
+async def _init_tools() -> List[BaseTool]:
+    """Async initializer — call once at startup, not at import time."""
+    global _amap_tools
+    if _amap_tools is not None:
+        return _amap_tools
 
-    async def initialize(self):
-        """异步初始化高德 MCP 客户端并加载工具"""
-        if self._tools:
-            return self._tools
+    amap_key = os.getenv("AMAP_API_KEY")
+    if not amap_key:
+        raise ValueError("未找到 AMAP_API_KEY，请在环境变量或 .env 文件中配置。")
 
-        amap_key = os.getenv("AMAP_API_KEY", "4cd31aba1a0bde0420bdea9950e2172c")
-        if not amap_key:
-            raise ValueError("未找到 AMAP_API_KEY，请在环境变量或环境变量文件中配置。")
-
-        # 初始化高德 MCP 客户端 (Streamable HTTP 模式)
-        self._client = MultiServerMCPClient(
-            {
-                "amap-maps-streamableHTTP": {
-                    "url": f"https://mcp.amap.com/mcp?key={amap_key}",
-                    "transport": "streamable_http"
-                }
+    client = MultiServerMCPClient(
+        {
+            "amap-maps-streamableHTTP": {
+                "url": f"https://mcp.amap.com/mcp?key={amap_key}",
+                "transport": "streamable_http",
             }
-        )
+        }
+    )
 
-        print("【高德MCP】正在连接服务并下载地图工具箱...")
-        # 核心：动态获取高德的所有工具并转化为 LangChain 的 BaseTool 格式
-        self._tools = await self._client.get_tools()
-        print(f"【高德MCP】成功加载工具: {[t.name for t in self._tools]}")
-        return self._tools
-
-    async def close(self):
-        """关闭 MCP 客户端连接"""
-        if self._client:
-            await self._client.close()
-            self._tools = []
-            print("【高德MCP】服务连接已安全关闭。")
+    print("【高德MCP】正在连接服务并下载地图工具箱...")
+    _amap_tools = await client.get_tools()
+    print(f"【高德MCP】成功加载工具: {[t.name for t in _amap_tools]}")
+    return _amap_tools
 
 
-# 导出两个核心快捷函数供外部使用
-async def get_amap_tools() -> List[BaseTool]:
-    """获取高德 MCP 的所有工具列表"""
-    manager = AmapToolManager()
-    return await manager.initialize()
+def get_amap_tools_sync() -> List[BaseTool]:
+    """
+    Synchronous accessor.
 
+    - If tools are already initialized, returns them immediately.
+    - If no event loop is running (standalone CLI), initializes synchronously.
+    - If an event loop is running (FastAPI) and tools aren't set, raises.
+    """
+    if _amap_tools is not None:
+        return _amap_tools
 
-async def close_amap_connection():
-    """关闭高德 MCP 连接"""
-    await AmapToolManager().close()
+    # No running event loop → safe to create one (CLI mode)
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        try:
+            return loop.run_until_complete(_init_tools())
+        finally:
+            loop.close()
+
+    # Running event loop exists → tools should have been set by lifespan
+    raise RuntimeError(
+        "Amap tools not initialized. Make sure _init_tools() was awaited at startup."
+    )
