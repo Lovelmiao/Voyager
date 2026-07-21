@@ -1,49 +1,18 @@
 from datetime import date
 from typing import Dict, List, Literal, Optional, Union
 from pydantic import BaseModel, Field, computed_field, field_validator
-class TripRequest(BaseModel):
-    start_city: str = Field(..., description="出发城市", example="上海")
-    end_city: str = Field(..., description="目的地城市", example="北京")
-
-    start_date: date = Field(..., description="出发日期，格式 YYYY-MM-DD", examples=["2025-06-01"])
-    end_date: date = Field(..., description="返回日期，格式 YYYY-MM-DD", examples=["2025-06-05"])
-
-    budget: int = Field(..., description="预算", example=2000)
-    transportation: str = Field(..., description="交通方式", example="高铁")
-    accommodation: str = Field(..., description="住宿偏好", example="经济型酒店")
-    preferences: List[str] = Field(default=[], description="旅行偏好标签", example=["历史文化", "美食"])
-    addition_information: Optional[str] = Field(default="", description="额外要求", example="希望多安排一些博物馆")
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "start_city": "北京",
-                "end_city": "上海",
-                "start_date": "2025-06-01",
-                "end_date": "2025-06-03",
-                "transportation": "公共交通",
-                "accommodation": "经济型酒店",
-                "preferences": ["历史文化", "美食"],
-                "addition_information": "希望多安排一些博物馆"
-            }
-        }
-    @computed_field
-    @property
-    def travel_days(self) -> int:
-        return (self.end_date - self.start_date).days + 1
-
 class Location(BaseModel):
     """地理位置"""
-    address: str = Field(..., description="地址", example="北京市朝阳区阜通东大街6号")
+    address: str = Field(..., description="地址", json_schema_extra={"example":"北京市朝阳区阜通东大街6号"})
     longitude: float = Field(..., description="经度")
     latitude: float = Field(..., description="纬度")
 
 class Attraction(BaseModel):
-    name: str = Field(..., description="景点名称", example="故宫")
+    name: str = Field(..., description="景点名称", json_schema_extra={"example":"故宫"})
     location: Location = Field(..., description="景点地理位置,包含经纬度坐标")
-    visit_duration: int = Field(..., description="建议游览时长，单位为分钟", example=120)
-    description: str = Field(..., description="景点简介", example="故宫是中国明清两代的皇家宫殿，位于北京市中心，是世界上现存规模最大、保存最为完整的木质结构古建筑之一。")
-    ticket_price: int = Field(..., description="门票价格(元)", example=60)
+    visit_duration: int = Field(..., description="建议游览时长，单位为分钟", json_schema_extra={"example":120})
+    description: str = Field(..., description="景点简介", json_schema_extra={"example":"故宫是中国明清两代的皇家宫殿，位于北京市中心，是世界上现存规模最大、保存最为完整的木质结构古建筑之一。"})
+    ticket_price: int = Field(..., description="门票价格(元)", json_schema_extra={"example":60})
 
     category: Optional[str] = Field(default="景点", description="景点类别")
     rating: Optional[float] = Field(default=None, description="评分")
@@ -53,24 +22,24 @@ class Attraction(BaseModel):
 
 class Meal(BaseModel):
     """餐饮信息"""
-    name: str = Field(..., description="餐厅名称", example="全聚德烤鸭店")
-    type: str = Field(..., description="餐饮类型", example="中餐")
+    name: str = Field(..., description="餐厅名称", json_schema_extra={"example":"全聚德烤鸭店"})
+    type: str = Field(..., description="餐饮类型", json_schema_extra={"example":"中餐"})
     location: Location = Field(..., description="餐厅地理位置,包含经纬度坐标")
-    estimated_cost: int = Field(default=0, description="预估费用(元)", example=100)
+    estimated_cost: int = Field(default=0, description="预估费用(元)", json_schema_extra={"example":100})
     description: Optional[str] = Field(default=None, description="描述")
 
 class Hotel(BaseModel):
     """酒店信息"""
     name: str = Field(..., description="酒店名称")
     location: Location = Field(..., description="酒店地理位置,包含经纬度坐标")
-    type: str = Field(default="", description="酒店类型", example="经济型酒店")
-    estimated_cost: str = Field(default="", description="预估费用(元/晚)", example="200-500元/晚")
+    type: str = Field(default="", description="酒店类型", json_schema_extra={"example":"经济型酒店"})
+    estimated_cost: str = Field(default="", description="预估费用(元/晚)", json_schema_extra={"example":"200-500元/晚"})
     rating: str = Field(default="", description="评分")
     distance: str = Field(default="", description="距离景点距离")
 
 class DayPlan(BaseModel):
-    date: str = Field(..., description="日期，格式 YYYY-MM-DD", example="2025-06-01")
-    day_index: int = Field(..., description="第几天的行程，从1开始", example=1)
+    date: str = Field(..., description="日期，格式 YYYY-MM-DD", json_schema_extra={"example":"2025-06-01"})
+    day_index: int = Field(..., description="第几天的行程，从1开始", json_schema_extra={"example":1})
     description: str = Field(..., description="当日行程描述")
     transportation: str = Field(..., description="交通方式")
     hotel: Optional[Hotel] = Field(default=None, description="推荐酒店")
@@ -118,13 +87,4 @@ class TripPlan(BaseModel):
     weather_info: List[WeatherInfo] = Field(default=[], description="天气信息")
     overall_suggestions: str = Field(..., description="总体建议")
     budget: Optional[Budget] = Field(default=None, description="预算信息")
-
-
-
-class WeatherResponse(BaseModel):
-    """大模型结构化输出的最终格式"""
-    weather_list: List[WeatherInfo] = Field(
-        ...,
-        description="包含整个行程中每一天天气预报信息的列表"
-    )
 

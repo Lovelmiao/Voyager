@@ -5,3 +5,9 @@ __pycache__/
 
 /trip_plan_assistant.md
 /字节Agent技术面试_旅游规划Agent项目高频问题.md
+
+./backend/postgre.py
+./backend/mem0_test.py
+./backend/init.sql
+./backend/checkpoints.db
+./backend/bind_tool_test.py

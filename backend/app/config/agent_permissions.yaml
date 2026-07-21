@@ -1,0 +1,35 @@
+agents:
+
+  weather_agent:
+    tools:
+      - maps_weather
+      - maps_geo
+      - maps_regeocode
+
+  attraction_agent:
+    tools:
+      - maps_text_search
+      - maps_search_detail
+      - maps_around_search
+      - maps_geo
+      - maps_regeocode
+      - maps_distance
+
+  hotel_agent:
+    tools:
+      - maps_text_search
+      - maps_search_detail
+      - maps_around_search
+      - maps_geo
+      - maps_regeocode
+      - maps_distance
+
+  traffic_agent:
+    tools:
+      - maps_direction_driving
+      - maps_direction_walking
+      - maps_direction_bicycling
+      - maps_direction_transit_integrated
+      - maps_distance
+      - maps_schema_navi
+      - maps_schema_take_taxi
