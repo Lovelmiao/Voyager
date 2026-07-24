@@ -130,7 +130,7 @@ MEMORY_API_KEY=your_mem0_api_key
 AMAP_API_KEY=your_amap_api_key
 
 # ===== PostgreSQL（检查点 / 审计 / 会话摘要）=====
-POSTGRES_URL=postgresql://postgres:postgre@localhost:5432/agent
+POSTGRES_URL=your_postgres_url
 
 # ===== 记忆 / 检查点类型：memory | sqlite | postgres =====
 MEMORY_TYPE=postgres
