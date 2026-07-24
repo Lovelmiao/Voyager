@@ -6,7 +6,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from mem0 import MemoryClient
 load_dotenv()
-from app.base import ToolExperience
+
 
 def extract_tool_experience(audit_records):
     extract_llm = ChatOpenAI(

@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "trip-plan-assistant"
+version = "0.1.0"
+description = "LangGraph multi agent trip planner"
+requires-python = ">=3.11"
+
+dependencies = [
+    "langgraph",
+    "langgraph-cli[inmem]",
+    "langchain",
+    "langchain-openai",
+    "langchain-mcp-adapters",
+    "langmem",
+    "langgraph-checkpoint-postgres",
+    "psycopg[binary,pool]",
+    "python-dotenv"
+]
+
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]

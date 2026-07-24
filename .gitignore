@@ -11,3 +11,6 @@ __pycache__/
 ./backend/init.sql
 ./backend/checkpoints.db
 ./backend/bind_tool_test.py
+./frontend
+.claude
+.langgraph_api

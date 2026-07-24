@@ -37,7 +37,7 @@ class MemoryManager():
             base_url=os.getenv("BASE_URL"),
             temperature=0,
         )
-        self.extract_llm = self.llm.with_structured_output(list[ToolExperience])
+        self.extract_llm = self.llm.with_structured_output(ToolExperienceList)
         self.compare_llm = self.llm.with_structured_output(CompareResult)
 
     def add_chat_messages(self, messages, user_id):
@@ -53,7 +53,6 @@ class MemoryManager():
         if not learn_audit_list:
             return
         experiences = self.extract_tool_experience(learn_audit_list)
-        print("experiences",experiences)
         if not experiences:
             return
 
@@ -107,8 +106,10 @@ class MemoryManager():
     """
 
         response = self.llm.invoke(prompt)
-        new_summary = response.content.strip()
-
+        if isinstance(response.content, str):
+            new_summary = response.content
+        elif isinstance(response.content, list):
+            new_summary = response.content[0]["text"]
         self.save_summary(session_id, new_summary)
 
     def get_summary(self, session_id: UUID):
@@ -175,7 +176,11 @@ class MemoryManager():
                 role = "System"
             else:
                 role = "Unknown"
-            lines.append(f"{role}: {m.content}")
+            if isinstance(m.content, str):
+                content = m.content
+            elif isinstance(m.content, list):
+                content = m.content[0]["text"]
+            lines.append(f"{role}: {content}")
         return "\n".join(lines)
 
     def save_audit(self, tools_audit):
@@ -225,10 +230,14 @@ class MemoryManager():
                 role = "tool"
             else:
                 continue
-            result.append({"role": role, "content": msg.content})
+            if isinstance(msg.content, str):
+                content = msg.content
+            elif isinstance(msg.content, list):
+                content = msg.content[0]["text"]
+            result.append({"role": role, "content": content})
         return result
 
-    def extract_tool_experience(self, audit_records) -> list[ToolExperience]:
+    def extract_tool_experience(self, audit_records) -> ToolExperienceList:
         system_prompt = f"""
         你是一位专精于 Agent 工具调用分析的系统优化专家。
 

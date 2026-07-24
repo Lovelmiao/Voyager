@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from langchain_core.messages import ToolMessage
 from pydantic import ValidationError
-from backend.app.base import AuditRecord
+from ..base import AuditRecord
 
 class ToolExecutor:
     def __init__(self, max_attempt=2):

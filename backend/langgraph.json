@@ -1,0 +1,9 @@
+{
+  "dependencies": [
+    "."
+  ],
+  "graphs": {
+    "trip_agent": "app.graph:graph"
+  },
+  "env": ".env"
+}

@@ -1,5 +1,6 @@
 import json
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, TypedDict, Any, Annotated, Sequence, Dict, List, Union, Literal
 
@@ -159,3 +160,11 @@ class ToolExperienceList(BaseModel):
 
 class CompareResult(BaseModel):
     action: Literal["same", "new"]
+
+
+@dataclass
+class AgentRuntime:
+    tool_manager: object
+    tool_executor: object
+    memory_manager: object
+    memory_checkpoint: object
