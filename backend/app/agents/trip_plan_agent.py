@@ -74,9 +74,9 @@ def fallback_router(blackboard):
 
 
 def _load_memory(state: RoundRobinState, config: RunnableConfig, memory_manager) -> RoundRobinState:
-    session_id = config["configurable"]["thread_id"]
-    user_id = config["configurable"]["user_id"]
-    user_input = state["messages"][0].content
+    session_id = "c1390202-838c-462c-807a-0bfaf11a1833"
+    user_id = "0e287944-f3ee-45d3-a48f-72d2b32af793"
+    user_input = state["messages"][0].content[0]["text"]
     session_summary = memory_manager.get_summary(session_id)
     user_preference = memory_manager.search_messages(
         query=user_input,
@@ -172,7 +172,7 @@ def orchestrator(state: RoundRobinState) -> RoundRobinState:
 async def _weather_expert(state: RoundRobinState, config: RunnableConfig, tool_manager, tool_executor,
                           memory_manager) -> RoundRobinState:
     weather_tools = tool_manager.get_tools("weather_agent")
-    trace_id = config["configurable"]["trace_id"]
+    trace_id = config["configurable"]["thread_id"]
     system_prompt = f"""# Role
     你是一位精明、严谨的【旅游气象数据分拣专家】。你的核心任务是精准识别用户的旅游需求，并【必须】通过调用地理编码与天气工具，获取详尽的实时与预测数据。你不需要生成冗长的最终旅游指南，而是负责为后续的文案 Agent 提取并整合核心的气象指标。
 
@@ -180,7 +180,10 @@ async def _weather_expert(state: RoundRobinState, config: RunnableConfig, tool_m
     1. **工具调用至上（Tool-First Action）**：只要用户提及任何目的地，你必须立即调用工具。绝不允许凭空捏造、依赖自身知识库回答未来天气。
     2. **模糊地址联动解析**：若目的地为非标准行政区（如"阿那亚"、"迪士尼"、"玉龙雪山"），必须先调用地理位置工具解析出准确的行政区划，再调用天气工具。
     3. **严格的思考链路（CoT）**：在决定调用工具前，必须在心中或通过 `Thought` 字段写下推理：用户要去哪？什么时间？我需要调用哪个工具？
-
+    4. **如果用户提出了新的任务，请结合黑板数据，判断是否需要重新调用工具获取最新数据。**
+    
+    **** 请注意，只根据数据板信息更新天气数据，不要将数据板的数据进行总结。 ****
+    
     # Execution Workflow
     1. **解析请求**：锁定用户提及的【目的地】和【旅行时间段】。
     2. **执行检索**：调用相关工具获取数据（地理坐标 -> 天气预报）。
@@ -243,7 +246,7 @@ def create_weather_expert(tool_manager, tool_executor, memory_manager):
 async def _attraction_expert(state: RoundRobinState, config: RunnableConfig, tool_manager, tool_executor,
                              memory_manager) -> RoundRobinState:
     attraction_tools = tool_manager.get_tools("attraction_agent")
-    trace_id = config["configurable"]["trace_id"]
+    trace_id = config["configurable"]["thread_id"]
     system_prompt = """# Role
     你是一位高效、严谨的【旅游景点数据分拣与空间分析专家】。你的核心任务是精准识别用户的目的地与偏好，【必须】通过调用高德地图工具获取真实景点数据，并结合黑板（Blackboard）中的天气与距离，筛选出最优的景点数据集，为后续的规划 Agent 提供决策支撑。
 
@@ -257,7 +260,10 @@ async def _attraction_expert(state: RoundRobinState, config: RunnableConfig, too
        - **若有雨/极端天气**：关键词搜索自动增加"博物馆"、"室内"、"美术馆"、"科技馆"等词。
        - **若晴朗舒适**：关键词搜索偏向"公园"、"景区"、"户外地标"。
     4. **严格的思考链路（CoT）**：在调用工具前，必须通过 `Thought` 明确：当前黑板天气是什么？用户有什么偏好？我该用什么搜索关键词？
-
+    5. **如果用户提出了新的任务，请结合黑板数据，判断是否需要重新调用工具获取最新数据。**
+    
+    **** 请注意，只根据数据板信息更新景点数据，不要将数据板的数据进行总结。 ****
+    
     # Execution Workflow
     1. **解析请求与黑板**：获取目的地、天数、偏好，并读取黑板中的天气状态。
     2. **执行检索与过滤**：
@@ -331,7 +337,7 @@ def create_attraction_expert(tool_manager, tool_executor, memory_manager):
 async def _hotel_expert(state: RoundRobinState, config: RunnableConfig, tool_manager, tool_executor,
                         memory_manager) -> RoundRobinState:
     hotel_tools = tool_manager.get_tools("hotel_agent")
-    trace_id = config["configurable"]["trace_id"]
+    trace_id = config["configurable"]["thread_id"]
     system_prompt = """# Role
     你是一位高效、精准的【旅游酒店数据分拣与空间分析专家】。你的核心任务是精准识别用户的住宿需求，【必须】调用高德地图工具获取真实的酒店数据，并结合黑板（Blackboard）中已有的景点坐标，确保酒店具有极佳的交通连贯性。
 
@@ -339,7 +345,10 @@ async def _hotel_expert(state: RoundRobinState, config: RunnableConfig, tool_man
     1. **真实与空间联动（Location-Based Search）**：严禁凭空捏造酒店。必须优先读取黑板中的 `attraction_result`（景点数据集），围绕核心景点或其几何中心调用工具检索酒店，确保"住行合一"。
     2. **预算与星级强过滤**：严格对照用户提及的预算（如"快捷酒店"、"高端度假"、"五星级"）选择对应的关键词进行检索。
     3. **严格的思考链路（CoT）**：在调用工具前，必须通过 `Thought` 明确：景点黑板里推荐了哪几个核心位置？用户的预算级别是什么？我该围绕哪个坐标点搜索周边酒店？
-
+    4. **如果用户提出了新的任务，请结合黑板数据，判断是否需要重新调用工具获取最新数据。**
+    
+    **** 请注意，只根据数据板信息更新酒店数据，不要将数据板的数据进行总结。 ****
+    
     # Execution Workflow
     1. **解析黑板**：读取目的地、预算偏好，以及黑板中前序 Agent 存入的【核心景点坐标】。
     2. **执行周边检索**：调用 `maps_around_search` 或 `maps_text_search` 查找酒店。
@@ -390,54 +399,49 @@ def create_hotel_expert(tool_manager, tool_executor, memory_manager):
 async def _traffic_expert(state: RoundRobinState, config: RunnableConfig, tool_manager, tool_executor,
                           memory_manager) -> RoundRobinState:
     traffic_tools = tool_manager.get_tools("traffic_agent")
-    trace_id = config["configurable"]["trace_id"]
-    system_prompt = """# Role
-    你是一位精明、严谨的【旅游气象数据分拣专家】。你的核心任务是精准识别用户的旅游需求，并【必须】通过调用地理编码与天气工具，获取详尽的实时与预测数据。你不需要生成冗长的最终旅游指南，而是负责为后续的文案 Agent 提取并整合核心的气象指标。
+    trace_id = config["configurable"]["thread_id"]
+    system_prompt = f"""# Role
+    你是一位高效、精密的【旅游交通与路线接驳专家】。你的核心职责是识别用户的出行需求，精准调用交通/路线规划/距离测量工具，分析大交通（如高铁/机票/跨城路线）与小交通（如市内地铁/打车/景区接驳/路线顺路度），并将核心交通数据更新至黑板。
 
-    # Goals & Core Rules
-    1. **工具调用至上（Tool-First Action）**：只要用户提及任何目的地，你必须立即调用工具。绝不允许凭空捏造、依赖自身知识库回答未来天气。
-    2. **模糊地址联动解析**：若目的地为非标准行政区（如"阿那亚"、"迪士尼"、"玉龙雪山"），必须先调用地理位置工具解析出准确的行政区划，再调用天气工具。
-    3. **严格的思考链路（CoT）**：在决定调用工具前，必须在心中或通过 `Thought` 字段写下推理：用户要去哪？什么时间？我需要调用哪个工具？
+    # Core Rules
+    1. **工具优先（Tool-First Action）**：只要涉及到城市间往返路线、市内景点间接驳、距离测量或交通路线规划，必须优先调用交通工具获取真实数据，绝不凭空估算行程时间或路线。
+    2. **时空连贯与顺路分析**：结合黑板中已有的【景点数据】与【酒店数据】，重点分析景点与景点之间、景点与住宿之间的**空间距离**与**接驳交通方式**（如：步行、地铁X号线、打车约Y分钟）。
+    3. **结合黑板增量更新**：如果用户提出了新需求或更改了行程，请检查黑板数据。若原有交通数据失效，立即重新调用工具获取最新接驳数据；若数据无需更新，只需补充差异分析。不要复述总结整个黑板，只输出本次提炼的交通核心指标。
 
     # Execution Workflow
-    1. **解析请求**：锁定用户提及的【目的地】和【旅行时间段】。
-    2. **执行检索**：调用相关工具获取数据（地理坐标 -> 天气预报）。
-    3. **输出中间面板**：将获取的数据严格按照下方格式输出，供后续 Agent 使用。
+    1. **解析需求**：锁定出发地、目的地、内部游玩景点列表及住宿点。
+    2. **调用工具**：
+       - 跨城交通：查询大交通方案及到达枢纽（如机场/火车站）。
+       - 同城/景区接驳：查询景点与景点、景点与酒店之间的最佳公共交通或驾车路线/耗时。
+    3. **更新黑板数据集**：提取关键交通指标（路线、耗时、建议交通工具、拥堵/接驳避坑点），供后续汇总 Agent 使用。
+    4. **如果用户提出了新的任务，请结合黑板数据，判断是否需要重新调用工具获取最新数据。**
+    
+    **** 请注意，只根据数据板信息更新交通数据，不要将数据板的数据进行总结。 ****
 
     # Output Format (纯结构化数据看板)
     ---
-    ## 📊 [目的地城市/景区] 气象核心数据集
+    ## 🚗 [目的地/行程路线] 交通接驳数据集
 
-    ### 📅 工具返回的原始天气流
-    * [日期1]：[天气状况] | [温湿度] | 降水概率: [X]% | 风速/紫外线: [X]
-    * [日期2]：[天气状况] | [温湿度] | 降水概率: [X]% | 风速/紫外线: [X]
+    ### 🚉 大交通与枢纽接驳
+    * **到达/离开方案**：[到达枢纽名称] -> [市中心/酒店]（推荐交通方式: [X] | 预计耗时: [X]分钟）
 
-    ### 🚨 旅游高危气象因子提示
-    * **户外高冲击因子**：[如：降水概率>60%的时段 / 体感闷热度 / 索道风速风险]
-    * **历史同期气候特征对照**：[基于该季节，补充当地特有的气候陷阱，如强对流、梅雨]
+    ### 🛣️ 日常游玩线路接驳矩阵
+    * **[景点A] -> [景点B]**：推荐[地铁/打车/步行] | 距离约 [X] km | 预计耗时 [X] 分钟 | 接驳建议: [如:建议打车/地铁X号线直达]
+    * **[景点/市区] -> [推荐住宿点]**：距离约 [X] km | 预计耗时 [X] 分钟 | 顺路度评级: [高/中/低]
+
+    ### ⚠️ 交通避坑与时效风险提示
+    * **拥堵/限行风险**：[如：高峰期某路段极易拥堵，建议避开17:00-19:00]
+    * **特殊接驳提示**：[如：打车不好定位，景区交通车末班车时间为18:00]
     ---
 
-    # Few-Shot Examples (少样本示例)
-
-    ### 示例 1：模糊景区且未指定明确时间
-    **User:** 我下周想去阿那亚玩三天，帮我看看天气。
-    **Thought:** 1. 目的地是"阿那亚"，属于模糊景区，我需要先知道它的具体行政区划。
-    2. 时间是"下周"，需要查询未来天气预报。
-    3. 动作：首先调用地理位置查询工具查找"阿那亚"。
-    **Call Tool:** `maps_regeocode(query="阿那亚")`
-    *(工具返回：河北省秦皇岛市昌黎县)*
-    **Thought:** 已经获取具体位置秦皇岛昌黎，现在调用天气工具查询下周（未来7天）的天气预报。
-    **Call Tool:** `maps_weather(location="秦皇岛", days=7)`
-    *(工具返回天气数据，Agent 格式化输出数据看板...)*
-
-    ### 示例 2：标准城市且时间明确
-    **User:** 7月18号去重庆玩4天，天气怎么样？
-    **Thought:**
-    1. 目的地是标准城市"重庆"。
-    2. 时间是7月18号起共4天。
-    3. 动作：直接调用天气工具查询重庆该时段预报。
-    **Call Tool:** `maps_weather(location="重庆", date="2026-07-18", days=4)`
-    *(工具返回天气数据，Agent 格式化输出数据看板...)*
+    # Few-Shot Example
+    **User:** 帮我查下从重庆北站到解放碑怎么走，还有解放碑去洪崖洞顺不顺路？
+    **Thought:** 
+    1. 需求包含两段交通接驳：重庆北站 -> 解放碑，解放碑 -> 洪崖洞。
+    2. 动作：调用路线规划工具查询路线与耗时。
+    **Call Tool:** `maps_direction(origin="重庆北站", destination="解放碑", mode="transit")`
+    **Call Tool:** `maps_distance(origin="解放碑", destination="洪崖洞")`
+    *(工具返回路线数据后，格式化输出交通接驳数据集...)*
     """
     human_prompt = f"""
     【当前数据板(Blackboard Data)】
@@ -489,32 +493,26 @@ async def summary_expert(state: RoundRobinState) -> RoundRobinState:
         SystemMessage(content=system_prompt),
         HumanMessage(content=human_prompt)
     ]
-    llm_with_no, llm_with_structured_output = llm_factory.create(output_schema=TripPlan)
-    try:
-        response = llm_with_structured_output.invoke(messages_input)
-        return {
-            "messages": [AIMessage(content=response.model_dump_json())],
-            "trip_plan": response.model_dump_json(),
-        }
-    except (ValidationError, OutputParserException) as e:
-        response = llm_with_no.invoke(messages_input)
-        return {
-            "messages": [response],
-            "trip_plan": response.content,
-        }
+    llm_with_no, llm_with_structured_output = llm_factory.create()
+    response = llm_with_no.invoke(messages_input)
+    return {
+        "messages": [AIMessage(content=response.model_dump_json())],
+        "trip_plan": response.model_dump_json(),
+    }
+
 
 
 
 
 def _add_memory(state: RoundRobinState, config: RunnableConfig, memory_manager: MemoryManager) -> RoundRobinState:
     messages = state["messages"]
-    user_id = config["configurable"]["user_id"]
-    session_id = config["configurable"]["thread_id"]
+    user_id = "0e287944-f3ee-45d3-a48f-72d2b32af793"
+    session_id = "c1390202-838c-462c-807a-0bfaf11a1833"
     if len(state["messages"]) >= 5:
         memory_manager.add_chat_messages(state["messages"], user_id=user_id)
         memory_manager.summarize_chat_messages(state["messages"], session_id)
         return {
-            "messages": [RemoveMessage(id=m.id) for m in messages[:-20]]
+            "messages": [RemoveMessage(id=m.id) for m in messages[:-5]]
         }
     return
 

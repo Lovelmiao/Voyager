@@ -24,6 +24,12 @@ class MCPClientManager:
     async def connect(self):
         self._client = MultiServerMCPClient(self._servers)
         self._tools = await self._client.get_tools()
+        for tool in self._tools:
+            print("=" * 50)
+            print("name:", tool.name)
+            print("type:", type(tool))
+            print("coroutine:", getattr(tool, "coroutine", None))
+            print("func:", getattr(tool, "func", None))
 
     async def refresh_tools(self):
         if not self._client:
